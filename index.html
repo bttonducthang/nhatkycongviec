@@ -179,22 +179,23 @@
     });
 
     // Tải danh sách Họ tên và Phòng ban
-    async function loadUsers() {
-      try {
-        const res = await fetch(`${API_URL}?action=getUsers`);
-        currentUserList = await res.json();
-        const select = document.getElementById('userSelect');
-        select.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
-        currentUserList.forEach(u => {
-          const opt = document.createElement('option');
-          opt.value = u.fullName;
-          opt.textContent = u.fullName;
-          select.appendChild(opt);
-        });
-      } catch (e) {
-        console.error("Lỗi kết nối API", e);
-      }
+  async function loadUsers() {
+    try {
+      // Thêm &_t=${Date.now()} để vô hiệu hóa cache trình duyệt
+      const res = await fetch(`${API_URL}?action=getUsers&_t=${Date.now()}`);
+      currentUserList = await res.json();
+      const select = document.getElementById('userSelect');
+      select.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
+      currentUserList.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.fullName;
+        opt.textContent = u.fullName;
+        select.appendChild(opt);
+      });
+    } catch (e) {
+    console.error("Lỗi kết nối API", e);
     }
+  }
 
     // Tự động điền Phòng ban khi chọn Họ tên
     function onUserChange() {
@@ -242,40 +243,41 @@
     }
 
     // Hiển thị Trang Danh sách công việc đã làm
-    async function showLogsPage(userName) {
-      showPage('list');
-      document.getElementById('listUserTitle').innerText = `Nhân viên: ${userName}`;
-      const tbody = document.getElementById('logsTableBody');
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Đang tải dữ liệu...</td></tr>';
+  async function showLogsPage(userName) {
+    showPage('list');
+    document.getElementById('listUserTitle').innerText = `Nhân viên: ${userName}`;
+    const tbody = document.getElementById('logsTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Đang tải dữ liệu...</td></tr>';
 
-      try {
-        const res = await fetch(`${API_URL}?action=getLogs&userName=${encodeURIComponent(userName)}`);
-        const logs = await res.json();
-        tbody.innerHTML = '';
+    try {
+      // Thêm &_t=${Date.now()} để ép API luôn lấy dữ liệu mới nhất
+      const res = await fetch(`${API_URL}?action=getLogs&userName=${encodeURIComponent(userName)}&_t=${Date.now()}`);
+      const logs = await res.json();
+      tbody.innerHTML = '';
 
-        if (!Array.isArray(logs) || logs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Chưa có nhật ký nào.</td></tr>';
-          return;
-        }
-
-        logs.reverse().forEach(log => {
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50";
-          tr.innerHTML = `
-            <td class="p-3 border"><input type="date" value="${log.date}" id="date_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
-            <td class="p-3 border"><input type="text" value="${log.task}" id="task_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
-            <td class="p-3 border"><textarea id="details_${log.logId}" class="border rounded p-1 text-sm w-full">${log.details}</textarea></td>
-            <td class="p-3 border"><input type="text" value="${log.note || ''}" id="note_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
-            <td class="p-3 border text-center">
-              <button onclick="saveLogEdit('${userName}', '${log.logId}')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700">Lưu</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
-      } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi lấy dữ liệu!</td></tr>';
+      if (!Array.isArray(logs) || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Chưa có nhật ký nào.</td></tr>';
+        return;
       }
+
+      logs.reverse().forEach(log => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50";
+        tr.innerHTML = `
+          <td class="p-3 border"><input type="date" value="${log.date}" id="date_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
+          <td class="p-3 border"><input type="text" value="${log.task}" id="task_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
+          <td class="p-3 border"><textarea id="details_${log.logId}" class="border rounded p-1 text-sm w-full">${log.details}</textarea></td>
+          <td class="p-3 border"><input type="text" value="${log.note || ''}" id="note_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
+          <td class="p-3 border text-center">
+            <button onclick="saveLogEdit('${userName}', '${log.logId}')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700">Lưu</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi lấy dữ liệu!</td></tr>';
     }
+  }
 
     // Chỉnh sửa công việc cũ trực tiếp trên bảng
     async function saveLogEdit(userName, logId) {
