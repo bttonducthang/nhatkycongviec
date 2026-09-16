@@ -98,7 +98,7 @@
           <p id="listUserTitle" class="text-sm text-indigo-600 font-medium"></p>
         </div>
         <div class="flex gap-2">
-          <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition">
+          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition">
             Tải Sheet về (.CSV)
           </button>
           <button onclick="showPage('form')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg text-sm transition">
@@ -393,23 +393,51 @@
       }
     }
 
-    // Xuất file CSV về máy tính
-    function exportToCSV() {
-      const table = document.querySelector("#pageList table");
-      let csv = [];
-      for (let row of table.rows) {
-        let cols = Array.from(row.cells).slice(0, 4).map(td => {
-          let input = td.querySelector('input, textarea');
-          return `"${input ? input.value.replace(/"/g, '""') : td.innerText.replace(/"/g, '""')}"`;
-        });
-        csv.push(cols.join(","));
+    // Xuất file Excel về máy tính
+  function exportToExcel() {
+    const table = document.querySelector("#pageList table");
+  
+    // Tạo template HTML chuẩn Excel kèm CSS giao diện
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <style>
+          table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+          th { background-color: #4F46E5; color: white; font-weight: bold; border: 1px solid #cccccc; padding: 8px; text-align: left; }
+          td { border: 1px solid #cccccc; padding: 8px; vertical-align: top; }
+          tr:nth-child(even) { background-color: #f9fafb; }
+        </style>
+      </head>
+      <body>
+        <table>
+    `;
+
+    // Duyệt lấy dữ liệu từng hàng trong bảng HTML
+    for (let row of table.rows) {
+      html += "<tr>";
+      // Lấy 4 cột đầu (bỏ cột nút bấm Thao tác cuối cùng)
+      for (let i = 0; i < Math.min(row.cells.length, 4); i++) {
+        let td = row.cells[i];
+        let input = td.querySelector('input, textarea');
+        let val = input ? input.value : td.innerText;
+        
+        // Đổi thẻ th / td tương ứng
+        let tag = row.rowIndex === 0 ? 'th' : 'td';
+        html += `<${tag}>${val.replace(/\n/g, '<br>')}</${tag}>`;
       }
-      const blob = new Blob(["\uFEFF" + csv.join("\n")], { type: 'text/csv;charset=utf-8;' }); // Thêm BOM để không lỗi font tiếng Việt trong Excel
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `Nhat_ky_cong_viec_${new Date().toISOString().split('T')[0]}.csv`;
-      link.click();
+      html += "</tr>";
     }
+
+    html += `</table></body></html>`;
+
+    // Tạo file tải về dưới dạng .xls
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `Nhat_ky_cong_viec_${new Date().toISOString().split('T')[0]}.xls`;
+    link.click();
+  }
 
     // Điều hướng trang
     function showPage(page) {
