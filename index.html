@@ -12,6 +12,19 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzVeC6SF6TBlXM_J0qmgtKydKblTAxPQ0SVvdLgI1Z-tMUGGnwILHBH-bwU12WmTfE/exec";
     let currentUserList = [];
+
+    // Hàm helper gửi dữ liệu POST đến Google Apps Script an toàn
+    async function postToGAS(data) {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8", // Tối ưu để tránh CORS pre-flight trên GAS
+        },
+        body: JSON.stringify(data),
+        redirect: "follow"
+      });
+      return await response.json();
+    }
   </script>
 
   <!-- NAVIGATION BAR -->
@@ -131,11 +144,13 @@
       <!-- Admin Login Form -->
       <div id="adminLoginForm">
         <h3 class="text-lg font-bold text-gray-800 mb-4">Đăng Nhập Quản Trị Viên</h3>
-        <div class="space-y-3">
-          <input type="text" id="adminUser" placeholder="Tên đăng nhập" class="w-full border rounded-lg p-2.5">
-          <input type="password" id="adminPass" placeholder="Mật khẩu" class="w-full border rounded-lg p-2.5">
-          <button onclick="loginAdmin()" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium">Đăng Nhập</button>
-        </div>
+        <form onsubmit="loginAdmin(event)" class="space-y-3">
+          <input type="text" id="adminUser" required placeholder="Tên đăng nhập" class="w-full border rounded-lg p-2.5">
+          <input type="password" id="adminPass" required placeholder="Mật khẩu" class="w-full border rounded-lg p-2.5">
+          <button type="submit" id="btnAdminLogin" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition">
+            Đăng Nhập
+          </button>
+        </form>
       </div>
 
       <!-- Admin Panel (Hiện khi đăng nhập thành công) -->
@@ -145,7 +160,7 @@
           <h4 class="text-sm font-semibold text-gray-700">Tạo người dùng & Sheet riêng mới:</h4>
           <input type="text" id="newFullName" placeholder="Họ và tên nhân viên" class="w-full border rounded-lg p-2 text-sm">
           <input type="text" id="newDept" placeholder="Phòng ban" class="w-full border rounded-lg p-2 text-sm">
-          <button onclick="createNewUser()" class="w-full bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium">
+          <button onclick="createNewUser()" id="btnCreateUser" class="w-full bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition">
             Tạo Người Dùng & Sheet Mới
           </button>
         </div>
@@ -206,26 +221,20 @@
       };
 
       try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          body: JSON.stringify(data)
-        });
-        const result = await res.json();
-        
+        const result = await postToGAS(data);
         if (result.status === 'success') {
-          // Hiển thị Pop-up thông báo thành công
           const modal = document.getElementById('successModal');
           modal.classList.remove('hidden');
-          
           setTimeout(() => {
             modal.classList.add('hidden');
             showLogsPage(data.fullName);
-          }, 2500);
+          }, 2000);
         } else {
-          alert("Lỗi: " + result.message);
+          alert("Lỗi: " + (result.message || "Không thể lưu nhật ký!"));
         }
       } catch (err) {
         alert("Đã xảy ra lỗi gửi dữ liệu!");
+        console.error(err);
       } finally {
         btn.disabled = false;
         btn.innerText = "Cập Nhật Công Việc";
@@ -244,7 +253,7 @@
         const logs = await res.json();
         tbody.innerHTML = '';
 
-        if (logs.length === 0) {
+        if (!Array.isArray(logs) || logs.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Chưa có nhật ký nào.</td></tr>';
           return;
         }
@@ -256,7 +265,7 @@
             <td class="p-3 border"><input type="date" value="${log.date}" id="date_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
             <td class="p-3 border"><input type="text" value="${log.task}" id="task_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
             <td class="p-3 border"><textarea id="details_${log.logId}" class="border rounded p-1 text-sm w-full">${log.details}</textarea></td>
-            <td class="p-3 border"><input type="text" value="${log.note}" id="note_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
+            <td class="p-3 border"><input type="text" value="${log.note || ''}" id="note_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
             <td class="p-3 border text-center">
               <button onclick="saveLogEdit('${userName}', '${log.logId}')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700">Lưu</button>
             </td>
@@ -280,15 +289,86 @@
         note: document.getElementById(`note_${logId}`).value
       };
 
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify(updatedData)
-      });
-      const result = await res.json();
-      if (result.status === 'success') {
-        alert("Đã cập nhật chỉnh sửa thành công!");
-      } else {
-        alert("Lỗi cập nhật: " + result.message);
+      try {
+        const result = await postToGAS(updatedData);
+        if (result.status === 'success') {
+          alert("Đã cập nhật chỉnh sửa thành công!");
+        } else {
+          alert("Lỗi cập nhật: " + (result.message || "Thao tác thất bại"));
+        }
+      } catch (err) {
+        alert("Lỗi kết nối khi cập nhật!");
+      }
+    }
+
+    // Đăng nhập Admin
+    async function loginAdmin(e) {
+      if (e) e.preventDefault();
+      const btn = document.getElementById('btnAdminLogin');
+      const u = document.getElementById('adminUser').value;
+      const p = document.getElementById('adminPass').value;
+
+      if (!u || !p) {
+        alert("Vui lòng nhập tên đăng nhập và mật khẩu!");
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "Đang kiểm tra...";
+
+      try {
+        const result = await postToGAS({
+          action: 'adminLogin',
+          username: u,
+          password: p
+        });
+
+        if (result.status === 'success') {
+          document.getElementById('adminLoginForm').classList.add('hidden');
+          document.getElementById('adminPanel').classList.remove('hidden');
+        } else {
+          alert(result.message || "Tên đăng nhập hoặc mật khẩu không đúng!");
+        }
+      } catch (err) {
+        alert("Lỗi hệ thống khi đăng nhập!");
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Đăng Nhập";
+      }
+    }
+
+    // Tạo người dùng mới
+    async function createNewUser() {
+      const name = document.getElementById('newFullName').value;
+      const dept = document.getElementById('newDept').value;
+      const btn = document.getElementById('btnCreateUser');
+
+      if (!name || !dept) return alert("Vui lòng nhập đủ thông tin!");
+
+      btn.disabled = true;
+      btn.innerText = "Đang tạo...";
+
+      try {
+        const result = await postToGAS({
+          action: 'createUser',
+          fullName: name,
+          department: dept
+        });
+
+        if (result.status === 'success') {
+          alert(`Đã thêm ${name} và tự động tạo Sheet mới!`);
+          document.getElementById('newFullName').value = '';
+          document.getElementById('newDept').value = '';
+          loadUsers();
+        } else {
+          alert("Lỗi: " + (result.message || "Không thể tạo người dùng mới"));
+        }
+      } catch (err) {
+        alert("Lỗi kết nối máy chủ!");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Tạo Người Dùng & Sheet Mới";
       }
     }
 
@@ -303,7 +383,7 @@
         });
         csv.push(cols.join(","));
       }
-      const blob = new Blob([csv.join("\n")], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(["\uFEFF" + csv.join("\n")], { type: 'text/csv;charset=utf-8;' }); // Thêm BOM để không lỗi font tiếng Việt trong Excel
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `Nhat_ky_cong_viec_${new Date().toISOString().split('T')[0]}.csv`;
@@ -324,40 +404,6 @@
     // Quản trị viên Modal
     function toggleAdminModal() {
       document.getElementById('adminModal').classList.toggle('hidden');
-    }
-
-    async function loginAdmin() {
-      const u = document.getElementById('adminUser').value;
-      const p = document.getElementById('adminPass').value;
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'adminLogin', username: u, password: p })
-      });
-      const result = await res.json();
-      if (result.status === 'success') {
-        document.getElementById('adminLoginForm').classList.add('hidden');
-        document.getElementById('adminPanel').classList.remove('hidden');
-      } else {
-        alert(result.message);
-      }
-    }
-
-    async function createNewUser() {
-      const name = document.getElementById('newFullName').value;
-      const dept = document.getElementById('newDept').value;
-      if (!name || !dept) return alert("Vui lòng nhập đủ thông tin!");
-
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'createUser', fullName: name, department: dept })
-      });
-      const result = await res.json();
-      if (result.status === 'success') {
-        alert(`Đã thêm ${name} và tự động tạo Sheet mới!`);
-        document.getElementById('newFullName').value = '';
-        document.getElementById('newDept').value = '';
-        loadUsers();
-      }
     }
   </script>
 </body>
