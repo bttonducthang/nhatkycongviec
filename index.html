@@ -3,513 +3,505 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hệ Thống Quản Lý Nhật Ký Công Việc</title>
-  <style>
-    :root {
-      --primary-color: #007bff;
-      --danger-color: #dc3545;
-      --success-color: #28a745;
-      --warning-color: #ffc107;
-      --bg-color: #f4f6f9;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: var(--bg-color);
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      background: #fff;
-      padding: 25px;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    h2, h3 { color: #333; margin-top: 0; }
-    .header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid #eee;
-      padding-bottom: 15px;
-      margin-bottom: 20px;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover { opacity: 0.9; }
-    button.btn-danger { background-color: var(--danger-color); }
-    button.btn-warning { background-color: var(--warning-color); color: #333; }
-    button.btn-secondary { background-color: #6c757d; }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
-    table, th, td { border: 1px solid #ddd; }
-    th, td {
-      padding: 10px;
-      text-align: left;
-    }
-    th { background-color: #e9ecef; }
-    
-    /* Modal / Popup */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      justify-content: center;
-      align-items: center;
-    }
-    .modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 8px;
-      width: 400px;
-      max-width: 90%;
-    }
-    .actions { display: flex; gap: 5px; }
-  </style>
+  <title>Nhật Ký Công Việc Hàng Ngày</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-slate-100 font-sans min-h-screen">
 
-<div class="container">
-  <div class="header-bar">
-    <h2>📋 Nhật Ký Công Việc</h2>
+  <!-- URL API kết nối với Google Apps Script -->
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbw9AAAkYgHBwa-LbEGNGCI0T31RlSL5xlfJu23TBj3A_OTLtG0gS0mA7FJTyw5KUtcI/exec";
+    let currentUserList = [];
+
+    // Hàm helper gửi dữ liệu POST đến Google Apps Script an toàn
+    async function postToGAS(data) {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8", // Tối ưu để tránh CORS pre-flight trên GAS
+        },
+        body: JSON.stringify(data),
+        redirect: "follow"
+      });
+      return await response.json();
+    }
+  </script>
+
+  <!-- NAVIGATION BAR -->
+  <nav class="bg-indigo-700 text-white p-4 shadow-lg flex justify-between items-center">
+    <h1 class="text-xl font-bold">Quản Lý Nhật Ký Công Việc</h1>
+    <button onclick="toggleAdminModal()" class="bg-indigo-900 hover:bg-indigo-800 px-3 py-1 rounded text-sm transition">
+      Quản Trị Viên
+    </button>
+  </nav>
+
+  <div class="max-w-4xl mx-auto p-4 md:p-6">
+
+    <!-- TRANG 1: FORM CẬP NHẬT CÔNG VIỆC -->
+    <div id="pageForm" class="bg-white p-6 rounded-xl shadow-md space-y-4">
+      <h2 class="text-lg font-bold text-gray-800 border-b pb-2">Nhập Nhật Ký Công Việc</h2>
+      
+      <form id="jobForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Họ tên -->
     <div>
-      <button onclick="openChangePinModal()" class="btn-warning">🔑 Đổi mã PIN</button>
-      <button onclick="openAdminModal()" class="btn-secondary">⚙️ Admin</button>
-    </div>
-  </div>
-
-  <!-- BỘ LỌC CHỌN NHÂN VIÊN -->
-  <div class="form-group">
-    <label for="selectUser">Chọn Nhân Viên Xem Nhật Ký:</label>
-    <select id="selectUser" onchange="loadUserLogs()">
-      <option value="">-- Đang tải danh sách... --</option>
-    </select>
-  </div>
-
-  <!-- NÚT THÊM MỚI -->
-  <div style="margin-bottom: 15px;">
-    <button onclick="openLogModal('add')">➕ Thêm Nhật Ký Mới</button>
-  </div>
-
-  <!-- BẢNG DỮ LIỆU -->
-  <h3>Danh sách công việc</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Ngày</th>
-        <th>Công việc</th>
-        <th>Chi tiết</th>
-        <th>Ghi chú</th>
-        <th>Cập nhật cuối</th>
-        <th>Thao tác</th>
-      </tr>
-    </thead>
-    <tbody id="logsTableBody">
-      <tr><td colspan="6" style="text-align:center;">Vui lòng chọn nhân viên để xem data.</td></tr>
-    </tbody>
-  </table>
-</div>
-
-<!-- MODAL THÊM / SỬA NHẬT KÝ -->
-<div id="logModal" class="modal">
-  <div class="modal-content">
-    <h3 id="modalTitle">Thêm Nhật Ký</h3>
-    <input type="hidden" id="logId">
-    
-    <div class="form-group">
-      <label>Ngày thực hiện:</label>
-      <input type="date" id="logDate">
-    </div>
-    <div class="form-group">
-      <label>Tên công việc:</label>
-      <input type="text" id="logTask">
-    </div>
-    <div class="form-group">
-      <label>Nội dung chi tiết:</label>
-      <textarea id="logDetails" rows="3"></textarea>
-    </div>
-    <div class="form-group">
-      <label>Ghi chú:</label>
-      <input type="text" id="logNote">
-    </div>
-
-    <!-- Trường nhập PIN (chỉ hiển thị khi SỬA) -->
-    <div class="form-group" id="pinGroup" style="display: none;">
-      <label style="color: var(--danger-color);">Mã PIN xác nhận (4 số):</label>
-      <input type="password" id="userPin" maxlength="4" placeholder="****">
-    </div>
-
-    <div style="text-align: right; margin-top: 15px;">
-      <button onclick="closeModal('logModal')" class="btn-secondary">Hủy</button>
-      <button onclick="saveLog()">Lưu lại</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL ĐỔI MÃ PIN -->
-<div id="changePinModal" class="modal">
-  <div class="modal-content">
-    <h3>🔑 Đổi Mã PIN Cá Nhân</h3>
-    <div class="form-group">
-      <label>Nhân viên:</label>
-      <select id="pinUserSelect"></select>
-    </div>
-    <div class="form-group">
-      <label>Mã PIN hiện tại:</label>
-      <input type="password" id="oldPin" maxlength="4" placeholder="****">
-    </div>
-    <div class="form-group">
-      <label>Mã PIN mới (4 số):</label>
-      <input type="password" id="newPin" maxlength="4" placeholder="****">
-    </div>
-    <div style="text-align: right; margin-top: 15px;">
-      <button onclick="closeModal('changePinModal')" class="btn-secondary">Hủy</button>
-      <button onclick="submitChangePin()">Xác nhận đổi</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL ADMIN (TẠO USER MỚI) -->
-<div id="adminModal" class="modal">
-  <div class="modal-content">
-    <h3>⚙️ Quản Trị Viên (Admin)</h3>
-    <div id="adminLoginForm">
-      <div class="form-group">
-        <label>Username Admin:</label>
-        <input type="text" id="adminUser">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Họ và tên *</label>
+      <div class="flex gap-2">
+        <select id="userSelect" onchange="onUserChange()" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
+          <option value="">-- Chọn nhân viên --</option>
+        </select>
+        <button type="button" onclick="viewUserLogs()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">
+          Xem công việc
+        </button>
       </div>
-      <div class="form-group">
-        <label>Password Admin:</label>
-        <input type="password" id="adminPass">
-      </div>
-      <button onclick="adminLogin()">Đăng Nhập Admin</button>
+    </div>
+          
+          <!-- Phòng ban (Tự động hiển thị) -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phòng ban</label>
+            <input type="text" id="department" readonly class="w-full bg-gray-100 border rounded-lg p-2.5 text-gray-600 cursor-not-allowed">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Công việc thực hiện -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Công việc thực hiện *</label>
+            <input type="text" id="task" required placeholder="Nhập tiêu đề công việc" class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <!-- Ngày thực hiện -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Ngày thực hiện</label>
+            <input type="date" id="workDate" class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <!-- Nội dung chi tiết -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nội dung công việc đã thực hiện *</label>
+          <textarea id="details" rows="3" required placeholder="Ghi chi tiết tiến độ, kết quả công việc..." class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+
+        <!-- Ghi chú -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Ghi chú (Không bắt buộc)</label>
+          <input type="text" id="note" placeholder="Thông tin bổ sung..." class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <button type="submit" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg shadow transition">
+          Cập Nhật Công Việc
+        </button>
+      </form>
     </div>
 
-    <div id="adminActionForm" style="display: none;">
-      <h4>Tạo Nhân Viên Mới</h4>
-      <div class="form-group">
-        <label>Họ và Tên:</label>
-        <input type="text" id="newFullName">
+    <!-- TRANG 2: DANH SÁCH CÔNG VIỆC ĐÃ LÀM -->
+    <div id="pageList" class="hidden bg-white p-6 rounded-xl shadow-md space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-3">
+        <div>
+          <h2 class="text-lg font-bold text-gray-800">Danh Sách Công Việc Đã Thực Hiện</h2>
+          <p id="listUserTitle" class="text-sm text-indigo-600 font-medium"></p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition">
+            Tải Sheet về (.CSV)
+          </button>
+          <button onclick="showPage('form')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg text-sm transition">
+            Quay Về Form
+          </button>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Phòng ban:</label>
-        <input type="text" id="newDepartment">
-      </div>
-      <div class="form-group">
-        <label>Mã PIN mặc định (4 số):</label>
-        <input type="text" id="newPinAdmin" value="1234" maxlength="4">
-      </div>
-      <button onclick="createUser()">Tạo Nhân Viên</button>
-    </div>
 
-    <div style="text-align: right; margin-top: 15px;">
-      <button onclick="closeModal('adminModal')" class="btn-secondary">Đóng</button>
-    </div>
-  </div>
-</div>
-
-<script>
-  // 🔴 THAY BẰNG URL GOOGLE APPS SCRIPT CỦA BẠN VÀO ĐÂY
-  const API_URL = "https://script.google.com/macros/s/AKfycbxUAnRvDav8t9bjXSuCIxnjGvy4RJULDfxltdBA8KmFlQbuTUzX6xFY7cT4Me-uh8pu/exec";
-
-  let usersList = [];
-  let currentLogs = [];
-
-  // Tự động tải danh sách User khi mở trang
-  window.onload = function() {
-    // Đặt ngày mặc định là hôm nay
-    document.getElementById('logDate').valueAsDate = new Date();
-    loadUsers();
-  };
-
-  function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
-  }
-
-  // 1. TẢI DANH SÁCH NHÂN VIÊN
-  function loadUsers() {
-    fetch(`${API_URL}?action=getUsers`)
-      .then(res => res.json())
-      .then(data => {
-        usersList = data;
-        const selectUser = document.getElementById('selectUser');
-        const pinUserSelect = document.getElementById('pinUserSelect');
-        
-        selectUser.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
-        pinUserSelect.innerHTML = '';
-
-        data.forEach(u => {
-          selectUser.innerHTML += `<option value="${u.fullName}">${u.fullName} (${u.department})</option>`;
-          pinUserSelect.innerHTML += `<option value="${u.fullName}">${u.fullName}</option>`;
-        });
-
-        if (data.length > 0) {
-          selectUser.selectedIndex = 1;
-          loadUserLogs();
-        }
-      });
-  }
-
-  // 2. TẢI NHẬT KÝ CỦA USER ĐƯỢC CHỌN
-  function loadUserLogs() {
-    const userName = document.getElementById('selectUser').value;
-    const tbody = document.getElementById('logsTableBody');
-    if (!userName) return;
-
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Đang tải dữ liệu...</td></tr>';
-
-    fetch(`${API_URL}?action=getLogs&userName=${encodeURIComponent(userName)}`)
-      .then(res => res.json())
-      .then(logs => {
-        currentLogs = logs;
-        if (logs.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Chưa có nhật ký nào.</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = '';
-        logs.forEach(log => {
-          tbody.innerHTML += `
-            <tr>
-              <td>${log.date}</td>
-              <td><b>${log.task}</b></td>
-              <td>${log.details}</td>
-              <td>${log.note || ''}</td>
-              <td><small>${log.lastUpdated || ''}</small></td>
-              <td class="actions">
-                <button class="btn-warning" onclick="openLogModal('edit', '${log.logId}')">Sửa</button>
-                <button class="btn-danger" onclick="deleteLog('${log.logId}')">Xóa</button>
-              </td>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse min-w-[600px]">
+          <thead>
+            <tr class="bg-slate-100 text-gray-700 text-sm">
+              <th class="p-3 border">Ngày</th>
+              <th class="p-3 border">Công việc</th>
+              <th class="p-3 border">Nội dung chi tiết</th>
+              <th class="p-3 border">Ghi chú</th>
+              <th class="p-3 border text-center">Thao tác</th>
             </tr>
-          `;
-        });
+          </thead>
+          <tbody id="logsTableBody" class="text-sm divide-y">
+            <!-- Dữ liệu được load động vào đây -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- POPUP THÔNG BÁO THÀNH CÔNG -->
+  <div id="successModal" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl p-6 shadow-2xl text-center space-y-3 max-w-sm w-full animate-bounce">
+      <div class="text-emerald-500 text-4xl">✓</div>
+      <h3 class="text-lg font-bold text-gray-800">Đã cập nhật công việc!</h3>
+      <p class="text-sm text-gray-500">Đang chuyển sang danh sách công việc...</p>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN LOGIN & MANAGEMENT -->
+  <div id="adminModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl space-y-4 relative">
+      <button onclick="toggleAdminModal()" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">✕</button>
+      
+      <!-- Admin Login Form -->
+      <div id="adminLoginForm">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Đăng Nhập Quản Trị Viên</h3>
+        <form onsubmit="loginAdmin(event)" class="space-y-3">
+          <input type="text" id="adminUser" required placeholder="Tên đăng nhập" class="w-full border rounded-lg p-2.5">
+          <input type="password" id="adminPass" required placeholder="Mật khẩu" class="w-full border rounded-lg p-2.5">
+          <button type="submit" id="btnAdminLogin" class="w-full bg-indigo-600 text-white py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition">
+            Đăng Nhập
+          </button>
+        </form>
+      </div>
+
+      <!-- Admin Panel (Hiện khi đăng nhập thành công) -->
+      <div id="adminPanel" class="hidden space-y-4">
+        <!-- Thanh trạng thái Admin & Nút Đăng xuất -->
+        <div class="flex justify-between items-center bg-indigo-50 p-2.5 rounded-lg border border-indigo-100">
+          <span class="text-xs font-semibold text-indigo-700">✓ Đã đăng nhập Quản trị viên</span>
+          <button onclick="logoutAdmin()" class="bg-red-500 hover:bg-red-600 text-white text-xs px-2.5 py-1 rounded transition font-medium">
+            Đăng xuất
+          </button>
+        </div>
+
+        <h3 class="text-lg font-bold text-gray-800">Quản Lý Nhân Viên & Sheet</h3>
+        <div class="space-y-3 border-t pt-3">
+          <h4 class="text-sm font-semibold text-gray-700">Tạo người dùng & Sheet riêng mới:</h4>
+          <input type="text" id="newFullName" placeholder="Họ và tên nhân viên" class="w-full border rounded-lg p-2 text-sm">
+          <input type="text" id="newDept" placeholder="Phòng ban" class="w-full border rounded-lg p-2 text-sm">
+          <button onclick="createNewUser()" id="btnCreateUser" class="w-full bg-emerald-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition">
+            Tạo Người Dùng & Sheet Mới
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Thiết lập ngày mặc định (GMT+7)
+    document.addEventListener("DOMContentLoaded", () => {
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('workDate').value = today;
+      loadUsers();
+    });
+
+    // Tải danh sách Họ tên và Phòng ban
+  async function loadUsers() {
+    try {
+      // Thêm &_t=${Date.now()} để vô hiệu hóa cache trình duyệt
+      const res = await fetch(`${API_URL}?action=getUsers&_t=${Date.now()}`);
+      currentUserList = await res.json();
+      const select = document.getElementById('userSelect');
+      select.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
+      currentUserList.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = u.fullName;
+        opt.textContent = u.fullName;
+        select.appendChild(opt);
       });
-  }
-
-  // 3. MỞ POPUP THÊM / SỬA NHẬT KÝ
-  function openLogModal(mode, logId = '') {
-    const userName = document.getElementById('selectUser').value;
-    if (!userName) {
-      alert("Vui lòng chọn nhân viên trước!");
-      return;
-    }
-
-    document.getElementById('logModal').style.display = 'flex';
-    document.getElementById('pinGroup').style.display = mode === 'edit' ? 'block' : 'none';
-    document.getElementById('userPin').value = '';
-
-    if (mode === 'add') {
-      document.getElementById('modalTitle').innerText = 'Thêm Nhật Ký Mới';
-      document.getElementById('logId').value = '';
-      document.getElementById('logTask').value = '';
-      document.getElementById('logDetails').value = '';
-      document.getElementById('logNote').value = '';
-    } else {
-      document.getElementById('modalTitle').innerText = 'Chỉnh Sửa Nhật Ký';
-      const log = currentLogs.find(l => l.logId === logId);
-      if (log) {
-        document.getElementById('logId').value = log.logId;
-        document.getElementById('logDate').value = log.date;
-        document.getElementById('logTask').value = log.task;
-        document.getElementById('logDetails').value = log.details;
-        document.getElementById('logNote').value = log.note;
-      }
+    } catch (e) {
+    console.error("Lỗi kết nối API", e);
     }
   }
 
-  // 4. LƯU DỮ LIỆU THÊM / SỬA (GỬI ĐẾN GOOGLE APPS SCRIPT)
-  function saveLog() {
-    const fullName = document.getElementById('selectUser').value;
-    const logId = document.getElementById('logId').value;
-    const date = document.getElementById('logDate').value;
-    const task = document.getElementById('logTask').value;
-    const details = document.getElementById('logDetails').value;
-    const note = document.getElementById('logNote').value;
-    const pin = document.getElementById('userPin').value;
+    // Tự động điền Phòng ban khi chọn Họ tên
+    function onUserChange() {
+      const selectedName = document.getElementById('userSelect').value;
+      const found = currentUserList.find(u => u.fullName === selectedName);
+      document.getElementById('department').value = found ? found.department : '';
+    }
+    
+    // Hàm kiểm tra và chuyển sang trang danh sách công việc
+    function viewUserLogs() {
+      const selectedName = document.getElementById('userSelect').value;
+  
+    // Rào chắn: Bắt buộc chọn nhân viên trước
+    if (!selectedName) {
+      alert("Vui lòng chọn Họ và tên nhân viên trước khi xem công việc!");
+      document.getElementById('userSelect').focus();
+    return;
+    }
+  
+  // Tải dữ liệu và chuyển trang
+  showLogsPage(selectedName);
+}
 
-    const action = logId ? 'updateLog' : 'addLog';
+    // Gửi Form Cập Nhật Công Việc
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.innerText = "Đang gửi dữ liệu...";
 
-    if (action === 'updateLog' && (!pin || pin.length !== 4)) {
-      alert("Vui lòng nhập mã PIN 4 số để xác nhận sửa!");
-      return;
+      const data = {
+        action: 'addLog',
+        fullName: document.getElementById('userSelect').value,
+        department: document.getElementById('department').value,
+        task: document.getElementById('task').value,
+        date: document.getElementById('workDate').value,
+        details: document.getElementById('details').value,
+        note: document.getElementById('note').value
+      };
+
+      try {
+        const result = await postToGAS(data);
+        if (result.status === 'success') {
+          const modal = document.getElementById('successModal');
+          modal.classList.remove('hidden');
+          setTimeout(() => {
+            modal.classList.add('hidden');
+            showLogsPage(data.fullName);
+          }, 2000);
+        } else {
+          alert("Lỗi: " + (result.message || "Không thể lưu nhật ký!"));
+        }
+      } catch (err) {
+        alert("Đã xảy ra lỗi gửi dữ liệu!");
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Cập Nhật Công Việc";
+      }
     }
 
-    const payload = {
-      action: action,
-      fullName: fullName,
-      logId: logId,
-      date: date,
-      task: task,
-      details: details,
-      note: note,
-      pin: pin,
-      deviceInfo: navigator.userAgent
-    };
+    // Hiển thị Trang Danh sách công việc đã làm
+  async function showLogsPage(userName) {
+    showPage('list');
+    document.getElementById('listUserTitle').innerText = `Nhân viên: ${userName}`;
+    const tbody = document.getElementById('logsTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Đang tải dữ liệu...</td></tr>';
 
-    fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.status === 'success') {
-        alert("Lưu thành công!");
-        closeModal('logModal');
-        loadUserLogs();
-      } else {
-        alert("Lỗi: " + res.message);
+    try {
+      // Thêm &_t=${Date.now()} để ép API luôn lấy dữ liệu mới nhất
+      const res = await fetch(`${API_URL}?action=getLogs&userName=${encodeURIComponent(userName)}&_t=${Date.now()}`);
+      const logs = await res.json();
+      tbody.innerHTML = '';
+
+      if (!Array.isArray(logs) || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Chưa có nhật ký nào.</td></tr>';
+        return;
       }
+
+      logs.reverse().forEach(log => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50";
+        tr.innerHTML = `
+          <td class="p-3 border"><input type="date" value="${log.date}" id="date_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
+          <td class="p-3 border"><input type="text" value="${log.task}" id="task_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
+          <td class="p-3 border"><textarea id="details_${log.logId}" class="border rounded p-1 text-sm w-full">${log.details}</textarea></td>
+          <td class="p-3 border"><input type="text" value="${log.note || ''}" id="note_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
+          <td class="p-3 border text-center whitespace-nowrap space-x-1">
+            <button onclick="saveLogEdit('${userName}', '${log.logId}')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 transition">Lưu</button>
+            <button onclick="deleteLogItem('${userName}', '${log.logId}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition">Xóa</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
     });
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi lấy dữ liệu!</td></tr>';
+    }
   }
 
-  // 5. XÓA NHẬT KÝ (YÊU CẦU MÃ PIN)
-  function deleteLog(logId) {
-    const fullName = document.getElementById('selectUser').value;
-    const pin = prompt("Nhập mã PIN 4 số của bạn để XÓA công việc này:");
+    // Chỉnh sửa công việc cũ trực tiếp trên bảng
+    async function saveLogEdit(userName, logId) {
+      const updatedData = {
+        action: 'updateLog',
+        fullName: userName,
+        logId: logId,
+        date: document.getElementById(`date_${logId}`).value,
+        task: document.getElementById(`task_${logId}`).value,
+        details: document.getElementById(`details_${logId}`).value,
+        note: document.getElementById(`note_${logId}`).value
+      };
 
-    if (pin === null) return; // Người dùng bấm Hủy
+      try {
+        const result = await postToGAS(updatedData);
+        if (result.status === 'success') {
+          alert("Đã cập nhật chỉnh sửa thành công!");
+        } else {
+          alert("Lỗi cập nhật: " + (result.message || "Thao tác thất bại"));
+        }
+      } catch (err) {
+        alert("Lỗi kết nối khi cập nhật!");
+      }
+    }
 
-    if (pin.trim().length !== 4) {
-      alert("Mã PIN phải gồm 4 số!");
+    // Hàm thực hiện xóa nhật ký công việc
+    async function deleteLogItem(userName, logId) {
+      if (!confirm("Bạn có chắc chắn muốn xóa công việc này không?")) {
       return;
     }
 
-    const payload = {
+      const data = {
       action: 'deleteLog',
-      fullName: fullName,
-      logId: logId,
-      pin: pin
-    };
+      fullName: userName,
+      logId: logId
+      };
 
-    fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.status === 'success') {
-        alert("Xóa thành công!");
-        loadUserLogs();
+    try {
+      const result = await postToGAS(data);
+      if (result.status === 'success') {
+          alert("Đã xóa công việc thành công!");
+          // Tải lại danh sách sau khi xóa
+          showLogsPage(userName);
       } else {
-        alert("Lỗi: " + res.message);
+      alert("Lỗi khi xóa: " + (result.message || "Không thể thực hiện!"));
+        }
+      } catch (err) {
+        alert("Lỗi kết nối khi gửi yêu cầu xóa!");
+        console.error(err);
       }
-    });
-  }
-
-  // 6. ĐỔI MÃ PIN CÁ NHÂN
-  function openChangePinModal() {
-    document.getElementById('changePinModal').style.display = 'flex';
-  }
-
-  function submitChangePin() {
-    const fullName = document.getElementById('pinUserSelect').value;
-    const oldPin = document.getElementById('oldPin').value;
-    const newPin = document.getElementById('newPin').value;
-
-    if (!oldPin || !newPin || newPin.length !== 4) {
-      alert("Mã PIN mới phải đúng 4 chữ số!");
-      return;
     }
 
-    fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'changePin',
-        fullName: fullName,
-        oldPin: oldPin,
-        newPin: newPin
-      })
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.status === 'success') {
-        alert("Đổi mã PIN thành công!");
-        closeModal('changePinModal');
-      } else {
-        alert("Lỗi: " + res.message);
+    // Đăng nhập Admin
+    async function loginAdmin(e) {
+      if (e) e.preventDefault();
+      const btn = document.getElementById('btnAdminLogin');
+      const u = document.getElementById('adminUser').value;
+      const p = document.getElementById('adminPass').value;
+
+      if (!u || !p) {
+        alert("Vui lòng nhập tên đăng nhập và mật khẩu!");
+        return;
       }
-    });
-  }
 
-  // 7. CHỨC NĂNG QUẢN TRỊ (ADMIN)
-  function openAdminModal() {
-    document.getElementById('adminModal').style.display = 'flex';
-    document.getElementById('adminLoginForm').style.display = 'block';
-    document.getElementById('adminActionForm').style.display = 'none';
-  }
+      btn.disabled = true;
+      btn.innerText = "Đang kiểm tra...";
 
-  function adminLogin() {
-    const user = document.getElementById('adminUser').value;
-    const pass = document.getElementById('adminPass').value;
+      try {
+        const result = await postToGAS({
+          action: 'adminLogin',
+          username: u,
+          password: p
+        });
 
-    fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'adminLogin', username: user, password: pass })
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.status === 'success') {
-        document.getElementById('adminLoginForm').style.display = 'none';
-        document.getElementById('adminActionForm').style.display = 'block';
-      } else {
-        alert("Đăng nhập Admin thất bại!");
+        if (result.status === 'success') {
+          document.getElementById('adminLoginForm').classList.add('hidden');
+          document.getElementById('adminPanel').classList.remove('hidden');
+        } else {
+          alert(result.message || "Tên đăng nhập hoặc mật khẩu không đúng!");
+        }
+      } catch (err) {
+        alert("Lỗi hệ thống khi đăng nhập!");
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Đăng Nhập";
       }
-    });
-  }
-
-  function createUser() {
-    const name = document.getElementById('newFullName').value;
-    const dept = document.getElementById('newDepartment').value;
-    const pin = document.getElementById('newPinAdmin').value;
-
-    if (!name || !dept) {
-      alert("Vui lòng điền đủ Họ tên và Phòng ban!");
-      return;
+    }
+    // Hàm Đăng xuất Admin
+    function logoutAdmin() {
+      // Ẩn bảng điều khiển Admin
+      document.getElementById('adminPanel').classList.add('hidden');
+      
+      // Hiện lại form đăng nhập Admin
+      document.getElementById('adminLoginForm').classList.remove('hidden');
+      
+      // Xóa thông tin mật khẩu cũ trong input
+      document.getElementById('adminPass').value = '';
     }
 
-    fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'createUser', fullName: name, department: dept, pin: pin })
-    })
-    .then(res => res.json())
-    .then(res => {
-      if (res.status === 'success') {
-        alert("Tạo nhân viên thành công!");
-        loadUsers();
-        closeModal('adminModal');
-      } else {
-        alert("Lỗi: " + res.message);
+    // Tạo người dùng mới
+    async function createNewUser() {
+      const name = document.getElementById('newFullName').value;
+      const dept = document.getElementById('newDept').value;
+      const btn = document.getElementById('btnCreateUser');
+
+      if (!name || !dept) return alert("Vui lòng nhập đủ thông tin!");
+
+      btn.disabled = true;
+      btn.innerText = "Đang tạo...";
+
+      try {
+        const result = await postToGAS({
+          action: 'createUser',
+          fullName: name,
+          department: dept
+        });
+
+        if (result.status === 'success') {
+          alert(`Đã thêm ${name} và tự động tạo Sheet mới!`);
+          document.getElementById('newFullName').value = '';
+          document.getElementById('newDept').value = '';
+          loadUsers();
+        } else {
+          alert("Lỗi: " + (result.message || "Không thể tạo người dùng mới"));
+        }
+      } catch (err) {
+        alert("Lỗi kết nối máy chủ!");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Tạo Người Dùng & Sheet Mới";
       }
-    });
+    }
+
+    // Xuất file Excel về máy tính
+  function exportToExcel() {
+    const table = document.querySelector("#pageList table");
+  
+    // Tạo template HTML chuẩn Excel kèm CSS giao diện
+    let html = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8">
+        <style>
+          table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+          th { background-color: #4F46E5; color: white; font-weight: bold; border: 1px solid #cccccc; padding: 8px; text-align: left; }
+          td { border: 1px solid #cccccc; padding: 8px; vertical-align: top; }
+          tr:nth-child(even) { background-color: #f9fafb; }
+        </style>
+      </head>
+      <body>
+        <table>
+    `;
+
+    // Duyệt lấy dữ liệu từng hàng trong bảng HTML
+    for (let row of table.rows) {
+      html += "<tr>";
+      // Lấy 4 cột đầu (bỏ cột nút bấm Thao tác cuối cùng)
+      for (let i = 0; i < Math.min(row.cells.length, 4); i++) {
+        let td = row.cells[i];
+        let input = td.querySelector('input, textarea');
+        let val = input ? input.value : td.innerText;
+        
+        // Đổi thẻ th / td tương ứng
+        let tag = row.rowIndex === 0 ? 'th' : 'td';
+        html += `<${tag}>${val.replace(/\n/g, '<br>')}</${tag}>`;
+      }
+      html += "</tr>";
+    }
+
+    html += `</table></body></html>`;
+
+    // Tạo file tải về dưới dạng .xls
+    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `Nhat_ky_cong_viec_${new Date().toISOString().split('T')[0]}.xls`;
+    link.click();
   }
-</script>
+
+    // Điều hướng trang
+    function showPage(page) {
+      if (page === 'form') {
+        document.getElementById('pageForm').classList.remove('hidden');
+        document.getElementById('pageList').classList.add('hidden');
+      } else {
+        document.getElementById('pageForm').classList.add('hidden');
+        document.getElementById('pageList').classList.remove('hidden');
+      }
+    }
+
+    // Quản trị viên Modal
+    function toggleAdminModal() {
+      document.getElementById('adminModal').classList.toggle('hidden');
+    }
+  </script>
 </body>
 </html>
