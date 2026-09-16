@@ -91,39 +91,40 @@
       </form>
     </div>
 
-    <!-- TRANG 2: DANH SÁCH CÔNG VIỆC ĐÃ LÀM -->
-    <div id="pageList" class="hidden bg-white p-6 rounded-xl shadow-md space-y-4">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-3 gap-3">
-        <div>
-          <h2 class="text-lg font-bold text-gray-800">Danh Sách Công Việc Đã Thực Hiện</h2>
-          <p id="listUserTitle" class="text-sm text-indigo-600 font-medium"></p>
-        </div>
-        <div class="flex gap-2">
-          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm transition">
-            Tải Sheet về (.CSV)
-          </button>
-          <button onclick="showPage('form')" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded-lg text-sm transition">
-            Quay Về Form
-          </button>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse min-w-[600px]">
-          <thead>
-            <tr class="bg-slate-100 text-gray-700 text-sm">
-              <th class="p-3 border">Ngày</th>
-              <th class="p-3 border">Công việc</th>
-              <th class="p-3 border">Nội dung chi tiết</th>
-              <th class="p-3 border">Ghi chú</th>
-              <th class="p-3 border text-center">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody id="logsTableBody" class="text-sm divide-y">
-          </tbody>
-        </table>
-      </div>
+    <!-- TRANG 2: DANH SÁCH CÔNG VIỆC ĐÃ LÀM (ĐÃ TỐI ƯU RỘNG RÃI TRÊN PC) -->
+<div id="pageList" class="hidden bg-white p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 gap-4">
+    <div>
+      <h2 class="text-xl md:text-2xl font-bold text-gray-800">Danh Sách Công Việc Đã Thực Hiện</h2>
+      <p id="listUserTitle" class="text-base text-indigo-600 font-semibold mt-1"></p>
     </div>
+    <div class="flex gap-3">
+      <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+        Tải Sheet về (.CSV)
+      </button>
+      <button onclick="showPage('form')" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+        Quay Về Form
+      </button>
+    </div>
+  </div>
+
+  <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+    <table class="w-full text-left border-collapse min-w-[1000px]">
+      <thead>
+        <tr class="bg-slate-100 text-gray-700 text-base font-semibold border-b">
+          <th class="p-4 border-r w-44">Ngày thực hiện</th>
+          <th class="p-4 border-r w-64">Tên công việc</th>
+          <th class="p-4 border-r min-w-[350px]">Nội dung chi tiết</th>
+          <th class="p-4 border-r w-64">Ghi chú</th>
+          <th class="p-4 text-center w-36">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody id="logsTableBody" class="text-base divide-y divide-gray-200">
+        <!-- Dữ liệu được load động vào đây -->
+      </tbody>
+    </table>
+  </div>
+</div>
 
   </div>
 
@@ -396,21 +397,21 @@
           return;
         }
 
-        logs.reverse().forEach(log => {
-          const tr = document.createElement('tr');
-          tr.className = "hover:bg-slate-50";
-          tr.innerHTML = `
-            <td class="p-3 border"><input type="date" value="${log.date}" id="date_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
-            <td class="p-3 border"><input type="text" value="${log.task}" id="task_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
-            <td class="p-3 border"><textarea id="details_${log.logId}" class="border rounded p-1 text-sm w-full">${log.details}</textarea></td>
-            <td class="p-3 border"><input type="text" value="${log.note || ''}" id="note_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
-            <td class="p-3 border text-center whitespace-nowrap space-x-1">
-              <button onclick="requestPinAction('update', '${userName}', '${log.logId}')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 transition">Lưu</button>
-              <button onclick="requestPinAction('delete', '${userName}', '${log.logId}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition">Xóa</button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        });
+       logs.reverse().forEach(log => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/80 transition-colors";
+        tr.innerHTML = `
+          <td class="p-3 border-r"><input type="date" value="${log.date}" id="date_${log.logId}" class="border rounded-lg p-2 text-sm md:text-base w-full focus:ring-2 focus:ring-indigo-500"></td>
+          <td class="p-3 border-r"><input type="text" value="${log.task}" id="task_${log.logId}" class="border rounded-lg p-2 text-sm md:text-base w-full font-medium focus:ring-2 focus:ring-indigo-500"></td>
+          <td class="p-3 border-r"><textarea id="details_${log.logId}" rows="3" class="border rounded-lg p-2 text-sm md:text-base w-full focus:ring-2 focus:ring-indigo-500 leading-relaxed">${log.details}</textarea></td>
+          <td class="p-3 border-r"><input type="text" value="${log.note || ''}" id="note_${log.logId}" class="border rounded-lg p-2 text-sm md:text-base w-full focus:ring-2 focus:ring-indigo-500"></td>
+          <td class="p-3 text-center whitespace-nowrap space-x-2">
+            <button onclick="requestPinAction('update', '${userName}', '${log.logId}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium hover:bg-blue-700 transition shadow-sm">Lưu</button>
+            <button onclick="requestPinAction('delete', '${userName}', '${log.logId}')" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium hover:bg-red-700 transition shadow-sm">Xóa</button>
+          </td>
+        `;
+      tbody.appendChild(tr);
+    });
       } catch (e) {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi lấy dữ liệu!</td></tr>';
       }
