@@ -10,7 +10,7 @@
 
   <!-- URL API kết nối với Google Apps Script -->
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyJYLQtpEMeKgb0c18ZZtN1w_taiUZ-WsQ0WfDOy5GgiOflE7uiUk5Z5Va8x1r6IggO/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbw9AAAkYgHBwa-LbEGNGCI0T31RlSL5xlfJu23TBj3A_OTLtG0gS0mA7FJTyw5KUtcI/exec";
     let currentUserList = [];
 
     // Hàm helper gửi dữ liệu POST đến Google Apps Script an toàn
@@ -296,12 +296,13 @@
           <td class="p-3 border"><input type="text" value="${log.task}" id="task_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
           <td class="p-3 border"><textarea id="details_${log.logId}" class="border rounded p-1 text-sm w-full">${log.details}</textarea></td>
           <td class="p-3 border"><input type="text" value="${log.note || ''}" id="note_${log.logId}" class="border rounded p-1 text-sm w-full"></td>
-          <td class="p-3 border text-center">
-            <button onclick="saveLogEdit('${userName}', '${log.logId}')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700">Lưu</button>
+          <td class="p-3 border text-center whitespace-nowrap space-x-1">
+            <button onclick="saveLogEdit('${userName}', '${log.logId}')" class="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 transition">Lưu</button>
+            <button onclick="deleteLogItem('${userName}', '${log.logId}')" class="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 transition">Xóa</button>
           </td>
         `;
         tbody.appendChild(tr);
-      });
+    });
     } catch (e) {
       tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi lấy dữ liệu!</td></tr>';
     }
@@ -328,6 +329,33 @@
         }
       } catch (err) {
         alert("Lỗi kết nối khi cập nhật!");
+      }
+    }
+
+    // Hàm thực hiện xóa nhật ký công việc
+    async function deleteLogItem(userName, logId) {
+      if (!confirm("Bạn có chắc chắn muốn xóa công việc này không?")) {
+      return;
+    }
+
+      const data = {
+      action: 'deleteLog',
+      fullName: userName,
+      logId: logId
+      };
+
+    try {
+      const result = await postToGAS(data);
+      if (result.status === 'success') {
+          alert("Đã xóa công việc thành công!");
+          // Tải lại danh sách sau khi xóa
+          showLogsPage(userName);
+      } else {
+      alert("Lỗi khi xóa: " + (result.message || "Không thể thực hiện!"));
+        }
+      } catch (err) {
+        alert("Lỗi kết nối khi gửi yêu cầu xóa!");
+        console.error(err);
       }
     }
 
