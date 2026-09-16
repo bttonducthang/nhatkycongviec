@@ -51,6 +51,9 @@
               <button type="button" onclick="viewUserLogs()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">
                 Xem công việc
               </button>
+              <button type="button" onclick="openUserChangePinModal()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">
+                Đổi PIN
+              </button>
             </div>
           </div>
           
@@ -264,7 +267,69 @@
       const found = currentUserList.find(u => u.fullName === selectedName);
       document.getElementById('department').value = found ? found.department : '';
     }
-    
+    // Mở Modal Đổi PIN của người dùng
+    function openUserChangePinModal() {
+      const userName = document.getElementById('userSelect').value;
+      if (!userName) {
+        alert("Vui lòng chọn Họ và tên nhân viên trước!");
+        document.getElementById('userSelect').focus();
+        return;
+      }
+      document.getElementById('userPinChangeTitle').innerText = `Nhân viên: ${userName}`;
+      document.getElementById('oldUserPin').value = '';
+      document.getElementById('newUserPin').value = '';
+      document.getElementById('confirmUserPin').value = '';
+      document.getElementById('userChangePinModal').classList.remove('hidden');
+    }
+
+    function closeUserChangePinModal() {
+      document.getElementById('userChangePinModal').classList.add('hidden');
+    }
+
+    // Xử lý gửi yêu cầu đổi PIN người dùng
+    async function submitUserChangePin(e) {
+      e.preventDefault();
+      const userName = document.getElementById('userSelect').value;
+      const oldPin = document.getElementById('oldUserPin').value.trim();
+      const newPin = document.getElementById('newUserPin').value.trim();
+      const confirmPin = document.getElementById('confirmUserPin').value.trim();
+
+      if (newPin !== confirmPin) {
+        alert("Mã PIN mới và Xác nhận mã PIN không trùng khớp!");
+        return;
+      }
+
+      if (oldPin === newPin) {
+        alert("Mã PIN mới không được giống Mã PIN cũ!");
+        return;
+      }
+
+      const btn = document.getElementById('btnSubmitUserPin');
+      btn.disabled = true;
+      btn.innerText = "Đang đổi...";
+
+      try {
+        const result = await postToGAS({
+          action: 'userUpdatePin',
+          fullName: userName,
+          oldPin: oldPin,
+          newPin: newPin
+        });
+
+        if (result.status === 'success') {
+          alert("Đã thay đổi mã PIN thành công!");
+          closeUserChangePinModal();
+        } else {
+          alert("Lỗi: " + (result.message || "Không thể đổi mã PIN"));
+        }
+      } catch (err) {
+        alert("Lỗi kết nối khi gửi yêu cầu!");
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Cập nhật";
+      }
+    }
     function viewUserLogs() {
       const selectedName = document.getElementById('userSelect').value;
       if (!selectedName) {
@@ -274,6 +339,7 @@
       }
       showLogsPage(selectedName);
     }
+    
 
     // Gửi Form Cập Nhật Công Việc Mới (Không yêu cầu PIN)
     async function handleFormSubmit(e) {
@@ -619,5 +685,33 @@
       document.getElementById('adminModal').classList.toggle('hidden');
     }
   </script>
+
+  <!-- MODAL NGƯỜI DÙNG TỰ ĐỔI MÃ PIN -->
+<div id="userChangePinModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+  <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+    <h3 class="text-lg font-bold text-gray-800 text-center">Đổi Mã PIN Cá Nhân</h3>
+    <p id="userPinChangeTitle" class="text-xs text-indigo-600 font-medium text-center"></p>
+    
+    <form onsubmit="submitUserChangePin(event)" class="space-y-3">
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Mã PIN hiện tại *</label>
+        <input type="password" id="oldUserPin" required placeholder="Nhập PIN cũ" maxlength="6" class="w-full border rounded-lg p-2 text-sm text-center">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Mã PIN mới *</label>
+        <input type="password" id="newUserPin" required placeholder="Nhập PIN mới" maxlength="6" class="w-full border rounded-lg p-2 text-sm text-center">
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-600 mb-1">Xác nhận PIN mới *</label>
+        <input type="password" id="confirmUserPin" required placeholder="Nhập lại PIN mới" maxlength="6" class="w-full border rounded-lg p-2 text-sm text-center">
+      </div>
+      
+      <div class="flex gap-2 pt-2">
+        <button type="button" onclick="closeUserChangePinModal()" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg text-sm font-medium transition">Hủy</button>
+        <button type="submit" id="btnSubmitUserPin" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg text-sm font-medium transition">Cập nhật</button>
+      </div>
+    </form>
+  </div>
+</div>
 </body>
 </html>
