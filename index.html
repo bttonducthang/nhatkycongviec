@@ -241,10 +241,16 @@
     let pendingAction = null; // Lưu trữ tác vụ chờ thực thi sau khi nhập PIN
 
     document.addEventListener("DOMContentLoaded", () => {
-      const today = new Date().toISOString().split('T')[0];
-      document.getElementById('workDate').value = today;
+    // Lấy ngày hiện tại chuẩn theo múi giờ địa phương (YYYY-MM-DD)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const localToday = `${year}-${month}-${day}`;
+
+      document.getElementById('workDate').value = localToday;
       loadUsers();
-    });
+  });
 
     async function loadUsers() {
       try {
