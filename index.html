@@ -91,40 +91,57 @@
       </form>
     </div>
 
-    <!-- TRANG 2: DANH SÁCH CÔNG VIỆC ĐÃ LÀM (ĐÃ TỐI ƯU RỘNG RÃI TRÊN PC) -->
-<div id="pageList" class="hidden bg-white p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
-  <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 gap-4">
-    <div>
-      <h2 class="text-xl md:text-2xl font-bold text-gray-800">Danh Sách Công Việc Đã Thực Hiện</h2>
-      <p id="listUserTitle" class="text-base text-indigo-600 font-semibold mt-1"></p>
-    </div>
-    <div class="flex gap-3">
-      <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
-        Tải Sheet về
-      </button>
-      <button onclick="showPage('form')" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
-        Quay Về Form
-      </button>
-    </div>
-  </div>
+    <!-- TRANG 2: DANH SÁCH CÔNG VIỆC ĐÃ LÀM (TÍCH HỢP PHÂN TRANG 10 DÒNG) -->
+    <div id="pageList" class="hidden bg-white p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-4 gap-4">
+        <div>
+          <h2 class="text-xl md:text-2xl font-bold text-gray-800">Danh Sách Công Việc Đã Thực Hiện</h2>
+          <p id="listUserTitle" class="text-base text-indigo-600 font-semibold mt-1"></p>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+            Tải Sheet về
+          </button>
+          <button onclick="showPage('form')" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+            Quay Về Form
+          </button>
+        </div>
+      </div>
 
-  <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
-    <table class="w-full text-left border-collapse min-w-[1000px]">
-      <thead>
-        <tr class="bg-slate-100 text-gray-700 text-base font-semibold border-b">
-          <th class="p-4 border-r w-44">Ngày thực hiện</th>
-          <th class="p-4 border-r w-64">Tên công việc</th>
-          <th class="p-4 border-r min-w-[350px]">Nội dung chi tiết</th>
-          <th class="p-4 border-r w-64">Ghi chú</th>
-          <th class="p-4 text-center w-36">Thao tác</th>
-        </tr>
-      </thead>
-      <tbody id="logsTableBody" class="text-base divide-y divide-gray-200">
-        <!-- Dữ liệu được load động vào đây -->
-      </tbody>
-    </table>
-  </div>
-</div>
+      <div class="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+        <table class="w-full text-left border-collapse min-w-[1000px]">
+          <thead>
+            <tr class="bg-slate-100 text-gray-700 text-base font-semibold border-b">
+              <th class="p-4 border-r w-44">Ngày thực hiện</th>
+              <th class="p-4 border-r w-64">Tên công việc</th>
+              <th class="p-4 border-r min-w-[350px]">Nội dung chi tiết</th>
+              <th class="p-4 border-r w-64">Ghi chú</th>
+              <th class="p-4 text-center w-36">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="logsTableBody" class="text-base divide-y divide-gray-200">
+            <!-- Dữ liệu được load động vào đây -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- BỘ ĐIỀU HƯỚNG PHÂN TRANG -->
+      <div id="paginationControls" class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4 border-t">
+        <div class="text-sm text-gray-600 font-medium">
+          Hiển thị <span id="pageInfo" class="font-bold text-indigo-700">0 - 0</span> trong tổng số <span id="totalLogsInfo" class="font-bold text-gray-800">0</span> công việc
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="btnPrevPage" onclick="changePage(-1)" class="bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1">
+            ‹ Trang trước
+          </button>
+          <span id="currentPageDisplay" class="text-sm font-bold text-gray-700 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-lg">1 / 1</span>
+          <button id="btnNextPage" onclick="changePage(1)" class="bg-gray-200 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1">
+            Trang sau ›
+          </button>
+        </div>
+      </div>
+
+    </div>
 
   </div>
 
@@ -167,7 +184,7 @@
         </form>
       </div>
 
-      <!-- Admin Panel (Hiện khi đăng nhập thành công) -->
+      <!-- Admin Panel -->
       <div id="adminPanel" class="hidden space-y-6">
         <div class="flex justify-between items-center bg-indigo-50 p-3 rounded-lg border border-indigo-100">
           <span class="text-sm font-semibold text-indigo-700">✓ Đã đăng nhập Quản trị viên</span>
@@ -176,7 +193,6 @@
           </button>
         </div>
 
-        <!-- Section 1: Tạo Người Dùng Mới -->
         <div class="border rounded-xl p-4 space-y-3 bg-slate-50">
           <h4 class="text-sm font-bold text-gray-700">1. Tạo người dùng & Cấp mã PIN ban đầu:</h4>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -189,7 +205,6 @@
           </button>
         </div>
 
-        <!-- Section 2: Danh sách và Đổi Mã PIN -->
         <div class="border rounded-xl p-4 space-y-3">
           <h4 class="text-sm font-bold text-gray-700">2. Quản lý Mã PIN Nhân Viên:</h4>
           <div class="overflow-x-auto">
@@ -203,13 +218,11 @@
                 </tr>
               </thead>
               <tbody id="adminUserTableBody">
-                <!-- Tải danh sách user vào đây -->
               </tbody>
             </table>
           </div>
         </div>
 
-        <!-- Section 3: Lịch Sử Thay Đổi Mã PIN -->
         <div class="border rounded-xl p-4 space-y-3">
           <div class="flex justify-between items-center">
             <h4 class="text-sm font-bold text-gray-700">3. Lịch Sử Đổi Mã PIN:</h4>
@@ -236,12 +249,43 @@
     </div>
   </div>
 
+  <!-- MODAL NGƯỜI DÙNG TỰ ĐỔI MÃ PIN -->
+  <div id="userChangePinModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl space-y-4">
+      <h3 class="text-lg font-bold text-gray-800 text-center">Đổi Mã PIN Cá Nhân</h3>
+      <p id="userPinChangeTitle" class="text-xs text-indigo-600 font-medium text-center"></p>
+      
+      <form onsubmit="submitUserChangePin(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Mã PIN hiện tại *</label>
+          <input type="password" id="oldUserPin" required placeholder="Nhập PIN cũ" maxlength="6" class="w-full border rounded-lg p-2 text-sm text-center">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Mã PIN mới *</label>
+          <input type="password" id="newUserPin" required placeholder="Nhập PIN mới" maxlength="6" class="w-full border rounded-lg p-2 text-sm text-center">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-600 mb-1">Xác nhận PIN mới *</label>
+          <input type="password" id="confirmUserPin" required placeholder="Nhập lại PIN mới" maxlength="6" class="w-full border rounded-lg p-2 text-sm text-center">
+        </div>
+        
+        <div class="flex gap-2 pt-2">
+          <button type="button" onclick="closeUserChangePinModal()" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg text-sm font-medium transition">Hủy</button>
+          <button type="submit" id="btnSubmitUserPin" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg text-sm font-medium transition">Cập nhật</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT LOGIC -->
   <script>
-    let pendingAction = null; // Lưu trữ tác vụ chờ thực thi sau khi nhập PIN
+    let pendingAction = null; 
+    let currentLogsData = []; 
+    let currentPage = 1;
+    const PAGE_SIZE = 10;
+    let currentUserNameLogs = "";
 
     document.addEventListener("DOMContentLoaded", () => {
-    // Lấy ngày hiện tại chuẩn theo múi giờ địa phương (YYYY-MM-DD)
       const now = new Date();
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -250,7 +294,7 @@
 
       document.getElementById('workDate').value = localToday;
       loadUsers();
-  });
+    });
 
     async function loadUsers() {
       try {
@@ -274,7 +318,7 @@
       const found = currentUserList.find(u => u.fullName === selectedName);
       document.getElementById('department').value = found ? found.department : '';
     }
-    // Mở Modal Đổi PIN của người dùng
+
     function openUserChangePinModal() {
       const userName = document.getElementById('userSelect').value;
       if (!userName) {
@@ -293,7 +337,6 @@
       document.getElementById('userChangePinModal').classList.add('hidden');
     }
 
-    // Xử lý gửi yêu cầu đổi PIN người dùng
     async function submitUserChangePin(e) {
       e.preventDefault();
       const userName = document.getElementById('userSelect').value;
@@ -337,6 +380,7 @@
         btn.innerText = "Cập nhật";
       }
     }
+
     function viewUserLogs() {
       const selectedName = document.getElementById('userSelect').value;
       if (!selectedName) {
@@ -346,9 +390,7 @@
       }
       showLogsPage(selectedName);
     }
-    
 
-    // Gửi Form Cập Nhật Công Việc Mới (Không yêu cầu PIN)
     async function handleFormSubmit(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSubmit');
@@ -386,9 +428,10 @@
       }
     }
 
-    // Hiển thị Trang Danh sách công việc
+    // Hiển thị Trang Danh sách công việc với phân trang 10 dòng
     async function showLogsPage(userName) {
       showPage('list');
+      currentUserNameLogs = userName;
       document.getElementById('listUserTitle').innerText = `Nhân viên: ${userName}`;
       const tbody = document.getElementById('logsTableBody');
       tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Đang tải dữ liệu...</td></tr>';
@@ -396,14 +439,39 @@
       try {
         const res = await fetch(`${API_URL}?action=getLogs&userName=${encodeURIComponent(userName)}&_t=${Date.now()}`);
         const logs = await res.json();
-        tbody.innerHTML = '';
 
         if (!Array.isArray(logs) || logs.length === 0) {
           tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4">Chưa có nhật ký nào.</td></tr>';
+          currentLogsData = [];
+          updatePaginationUI();
           return;
         }
 
-       logs.reverse().forEach(log => {
+        currentLogsData = logs.reverse();
+        currentPage = 1;
+        renderLogsTablePage();
+
+      } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi lấy dữ liệu!</td></tr>';
+      }
+    }
+
+    function renderLogsTablePage() {
+      const tbody = document.getElementById('logsTableBody');
+      tbody.innerHTML = '';
+
+      const totalLogs = currentLogsData.length;
+      const totalPages = Math.ceil(totalLogs / PAGE_SIZE) || 1;
+
+      if (currentPage < 1) currentPage = 1;
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * PAGE_SIZE;
+      const endIndex = Math.min(startIndex + PAGE_SIZE, totalLogs);
+
+      const pageItems = currentLogsData.slice(startIndex, endIndex);
+
+      pageItems.forEach(log => {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50/80 transition-colors";
         tr.innerHTML = `
@@ -412,18 +480,41 @@
           <td class="p-3 border-r"><textarea id="details_${log.logId}" rows="3" class="border rounded-lg p-2 text-sm md:text-base w-full focus:ring-2 focus:ring-indigo-500 leading-relaxed">${log.details}</textarea></td>
           <td class="p-3 border-r"><input type="text" value="${log.note || ''}" id="note_${log.logId}" class="border rounded-lg p-2 text-sm md:text-base w-full focus:ring-2 focus:ring-indigo-500"></td>
           <td class="p-3 text-center whitespace-nowrap space-x-2">
-            <button onclick="requestPinAction('update', '${userName}', '${log.logId}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium hover:bg-blue-700 transition shadow-sm">Lưu</button>
-            <button onclick="requestPinAction('delete', '${userName}', '${log.logId}')" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium hover:bg-red-700 transition shadow-sm">Xóa</button>
+            <button onclick="requestPinAction('update', '${currentUserNameLogs}', '${log.logId}')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium hover:bg-blue-700 transition shadow-sm">Lưu</button>
+            <button onclick="requestPinAction('delete', '${currentUserNameLogs}', '${log.logId}')" class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium hover:bg-red-700 transition shadow-sm">Xóa</button>
           </td>
         `;
-      tbody.appendChild(tr);
-    });
-      } catch (e) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi lấy dữ liệu!</td></tr>';
+        tbody.appendChild(tr);
+      });
+
+      updatePaginationUI();
+    }
+
+    function changePage(direction) {
+      const totalPages = Math.ceil(currentLogsData.length / PAGE_SIZE) || 1;
+      const newPage = currentPage + direction;
+
+      if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage;
+        renderLogsTablePage();
       }
     }
 
-    // Yêu cầu nhập mã PIN khi Sửa hoặc Xóa
+    function updatePaginationUI() {
+      const totalLogs = currentLogsData.length;
+      const totalPages = Math.ceil(totalLogs / PAGE_SIZE) || 1;
+
+      const startIndex = totalLogs === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+      const endIndex = Math.min(currentPage * PAGE_SIZE, totalLogs);
+
+      document.getElementById('pageInfo').innerText = `${startIndex} - ${endIndex}`;
+      document.getElementById('totalLogsInfo').innerText = totalLogs;
+      document.getElementById('currentPageDisplay').innerText = `${currentPage} / ${totalPages}`;
+
+      document.getElementById('btnPrevPage').disabled = (currentPage <= 1);
+      document.getElementById('btnNextPage').disabled = (currentPage >= totalPages || totalLogs === 0);
+    }
+
     function requestPinAction(type, userName, logId) {
       pendingAction = { type, userName, logId };
       document.getElementById('inputUserPin').value = '';
@@ -436,7 +527,6 @@
       pendingAction = null;
     }
 
-    // Thực thi Lưu/Xóa sau khi đã nhập mã PIN
     async function submitPinAction() {
       const pin = document.getElementById('inputUserPin').value.trim();
       if (!pin) return alert("Vui lòng nhập mã PIN!");
@@ -488,7 +578,6 @@
       }
     }
 
-    // Đăng nhập Admin
     async function loginAdmin(e) {
       if (e) e.preventDefault();
       const btn = document.getElementById('btnAdminLogin');
@@ -525,7 +614,6 @@
       document.getElementById('adminPass').value = '';
     }
 
-    // Admin: Tải danh sách User & PIN
     async function loadAdminUserTable() {
       const tbody = document.getElementById('adminUserTableBody');
       tbody.innerHTML = '<tr><td colspan="4" class="p-2 text-center">Đang tải...</td></tr>';
@@ -551,7 +639,6 @@
       }
     }
 
-    // Admin: Đổi mã PIN nhân viên
     async function adminChangePin(fullName) {
       const newPin = prompt(`Nhập mã PIN mới cho nhân viên: ${fullName}`);
       if (!newPin || !newPin.trim()) return;
@@ -575,7 +662,6 @@
       }
     }
 
-    // Admin: Tải Lịch sử Đổi Mã PIN
     async function loadPinHistory() {
       const tbody = document.getElementById('pinHistoryTableBody');
       tbody.innerHTML = '<tr><td colspan="4" class="p-2 text-center">Đang tải...</td></tr>';
@@ -600,7 +686,6 @@
       }
     }
 
-    // Tạo người dùng mới từ Admin
     async function createNewUser() {
       const name = document.getElementById('newFullName').value.trim();
       const dept = document.getElementById('newDept').value.trim();
@@ -639,9 +724,13 @@
       }
     }
 
-    // Xuất file Excel
+    // Xuất file Excel (Xuất toàn bộ danh sách hiện tại của nhân viên)
     function exportToExcel() {
-      const table = document.querySelector("#pageList table");
+      if (currentLogsData.length === 0) {
+        alert("Không có dữ liệu để xuất file!");
+        return;
+      }
+
       let html = `
         <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
         <head>
@@ -655,26 +744,31 @@
         </head>
         <body>
           <table>
+            <tr>
+              <th>Ngày thực hiện</th>
+              <th>Tên công việc</th>
+              <th>Nội dung chi tiết</th>
+              <th>Ghi chú</th>
+            </tr>
       `;
 
-      for (let row of table.rows) {
-        html += "<tr>";
-        for (let i = 0; i < Math.min(row.cells.length, 4); i++) {
-          let td = row.cells[i];
-          let input = td.querySelector('input, textarea');
-          let val = input ? input.value : td.innerText;
-          let tag = row.rowIndex === 0 ? 'th' : 'td';
-          html += `<${tag}>${val.replace(/\n/g, '<br>')}</${tag}>`;
-        }
-        html += "</tr>";
-      }
+      currentLogsData.forEach(log => {
+        html += `
+          <tr>
+            <td>${log.date}</td>
+            <td>${log.task}</td>
+            <td>${(log.details || '').replace(/\n/g, '<br>')}</td>
+            <td>${log.note || ''}</td>
+          </tr>
+        `;
+      });
 
       html += `</table></body></html>`;
 
       const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `Nhat_ky_cong_viec_${new Date().toISOString().split('T')[0]}.xls`;
+      link.download = `Nhat_ky_cong_viec_${currentUserNameLogs}_${new Date().toISOString().split('T')[0]}.xls`;
       link.click();
     }
 
@@ -692,33 +786,5 @@
       document.getElementById('adminModal').classList.toggle('hidden');
     }
   </script>
-
-  <!-- MODAL NGƯỜI DÙNG TỰ ĐỔI MÃ PIN -->
-<div id="userChangePinModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
-  <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl space-y-4">
-    <h3 class="text-lg font-bold text-gray-800 text-center">Đổi Mã PIN Cá Nhân</h3>
-    <p id="userPinChangeTitle" class="text-xs text-indigo-600 font-medium text-center"></p>
-    
-    <form onsubmit="submitUserChangePin(event)" class="space-y-3">
-      <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Mã PIN hiện tại *</label>
-        <input type="password" id="oldUserPin" required placeholder="Nhập PIN cũ" maxlength="6" class="w-full border rounded-lg p-2 text-sm text-center">
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Mã PIN mới *</label>
-        <input type="password" id="newUserPin" required placeholder="Nhập PIN mới" maxlength="6" class="w-full border rounded-lg p-2 text-sm text-center">
-      </div>
-      <div>
-        <label class="block text-xs font-medium text-gray-600 mb-1">Xác nhận PIN mới *</label>
-        <input type="password" id="confirmUserPin" required placeholder="Nhập lại PIN mới" maxlength="6" class="w-full border rounded-lg p-2 text-sm text-center">
-      </div>
-      
-      <div class="flex gap-2 pt-2">
-        <button type="button" onclick="closeUserChangePinModal()" class="w-1/2 bg-gray-300 hover:bg-gray-400 text-gray-800 py-2 rounded-lg text-sm font-medium transition">Hủy</button>
-        <button type="submit" id="btnSubmitUserPin" class="w-1/2 bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg text-sm font-medium transition">Cập nhật</button>
-      </div>
-    </form>
-  </div>
-</div>
 </body>
 </html>
