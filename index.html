@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Nhật Ký Công Việc Hàng Ngày</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Thư viện Tom Select cho ô chọn nhân viên -->
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 </head>
 <body class="bg-slate-100 font-sans min-h-screen">
 
@@ -347,10 +350,50 @@
       loadUsers();
     });
 
+	let userSelectInstance = null; // Biến lưu instance của Tom Select
+
+    // Hàm tách lấy Tên (từ cuối cùng) để sắp xếp A-Z theo tên
+    function getFirstName(fullName) {
+      if (!fullName) return '';
+      const parts = fullName.trim().split(/\s+/);
+      return parts[parts.length - 1]; // Lấy từ cuối cùng trong họ và tên
+    }
+
     async function loadUsers() {
       try {
         const res = await fetch(`${API_URL}?action=getUsers&_t=${Date.now()}`);
         currentUserList = await res.json();
+
+        // 1. Phân loại "Quản trị viên" và các nhân viên khác
+        let adminUser = null;
+        let normalUsers = [];
+
+        currentUserList.forEach(u => {
+          if (u.fullName && u.fullName.trim().toLowerCase() === 'quản trị viên') {
+            adminUser = u;
+          } else {
+            normalUsers.push(u);
+          }
+        });
+
+        // 2. Sắp xếp danh sách nhân viên theo chữ cái đầu của TÊN (tiếng Việt chuẩn)
+        normalUsers.sort((a, b) => {
+          const nameA = getFirstName(a.fullName);
+          const nameB = getFirstName(b.fullName);
+          return nameA.localeCompare(nameB, 'vi', { sensitivity: 'base' });
+        });
+
+        // 3. Ghép "Quản trị viên" lên đầu danh sách (vị trí số 1)
+        let sortedUsers = [];
+        if (adminUser) {
+          sortedUsers.push(adminUser);
+        }
+        sortedUsers = sortedUsers.concat(normalUsers);
+
+        // Cập nhật lại mảng dữ liệu gốc
+        currentUserList = sortedUsers;
+
+        // 4. Đổ dữ liệu vào thẻ <select>
         const select = document.getElementById('userSelect');
         select.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
         currentUserList.forEach(u => {
@@ -359,6 +402,21 @@
           opt.textContent = u.fullName;
           select.appendChild(opt);
         });
+
+        // 5. Khởi tạo hoặc cập nhật Tom Select (Tắt sort mặc định của Tom Select để giữ nguyên thứ tự đã sắp xếp)
+        if (userSelectInstance) {
+          userSelectInstance.destroy();
+        }
+
+        userSelectInstance = new TomSelect("#userSelect", {
+          create: false,
+          sortField: [], // Đặt mảng rỗng để Tom Select hiển thị đúng thứ tự danh sách ta đã xếp
+          placeholder: "-- Chọn hoặc gõ tên nhân viên --",
+          onChange: function(value) {
+            onUserChange();
+          }
+        });
+
       } catch (e) {
         console.error("Lỗi kết nối API", e);
       }
