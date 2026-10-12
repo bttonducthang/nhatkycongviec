@@ -45,12 +45,22 @@
       
       <form id="jobForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
+			<div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Họ và tên *</label>
             <div class="flex gap-2">
-              <select id="userSelect" onchange="onUserChange()" required class="w-full border rounded-lg p-2.5 focus:ring-2 focus:ring-indigo-500">
-                <option value="">-- Chọn nhân viên --</option>
-              </select>
+              <!-- Khung giả lập hiển thị ngay lập tức từ giây đầu tiên -->
+              <div id="fakeSelectBox" class="w-full border rounded-lg p-2.5 bg-white flex items-center justify-between text-gray-400 text-sm shadow-sm cursor-wait">
+                <span>Đang tải danh sách...</span>
+                <span class="text-xs">▼</span>
+              </div>
+
+              <!-- Thẻ select thật nhưng bị ẩn đi lúc đầu -->
+              <div class="w-full hidden">
+                <select id="userSelect" onchange="onUserChange()" required class="w-full">
+                  <option value="">-- Chọn nhân viên --</option>
+                </select>
+              </div>
+
               <button type="button" onclick="viewUserLogs()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm transition whitespace-nowrap">
                 Xem công việc
               </button>
@@ -393,7 +403,7 @@
         // Cập nhật lại mảng dữ liệu gốc
         currentUserList = sortedUsers;
 
-        // 4. Đổ dữ liệu vào thẻ <select>
+		// 4. Đổ dữ liệu vào thẻ <select>
         const select = document.getElementById('userSelect');
         select.innerHTML = '<option value="">-- Chọn nhân viên --</option>';
         currentUserList.forEach(u => {
@@ -403,14 +413,18 @@
           select.appendChild(opt);
         });
 
-        // 5. Khởi tạo hoặc cập nhật Tom Select (Tắt sort mặc định của Tom Select để giữ nguyên thứ tự đã sắp xếp)
+        // ẨN KHUNG GIẢ LẬP ĐI VÀ HIỆN SELECT THẬT LÊN ĐỂ KHỞI TẠO TOM SELECT
+        document.getElementById('fakeSelectBox').style.display = 'none';
+        select.parentElement.classList.remove('hidden');
+
+        // 5. Khởi tạo hoặc cập nhật Tom Select
         if (userSelectInstance) {
           userSelectInstance.destroy();
         }
 
         userSelectInstance = new TomSelect("#userSelect", {
           create: false,
-          sortField: [], // Đặt mảng rỗng để Tom Select hiển thị đúng thứ tự danh sách ta đã xếp
+          sortField: [], 
           placeholder: "-- Chọn hoặc gõ tên nhân viên --",
           onChange: function(value) {
             onUserChange();
