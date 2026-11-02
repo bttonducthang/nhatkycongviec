@@ -1030,52 +1030,22 @@ function applySearchAndFilter() {
     }
 
     // Xuất file Excel (Tự động xuất danh sách đã lọc theo kết quả tìm kiếm)
-    function exportToExcel() {
-      if (filteredLogsData.length === 0) {
-        alert("Không có dữ liệu để xuất file!");
-        return;
-      }
+function exportToExcel() {
+  const userName = document.getElementById('userSelect').value;
+  if (!userName) {
+    alert("Vui lòng chọn nhân viên trước khi tải file!");
+    return;
+  }
 
-      let html = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
-        <head>
-          <meta charset="utf-8">
-          <style>
-            table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
-            th { background-color: #4F46E5; color: white; font-weight: bold; border: 1px solid #cccccc; padding: 8px; text-align: left; }
-            td { border: 1px solid #cccccc; padding: 8px; vertical-align: top; }
-            tr:nth-child(even) { background-color: #f9fafb; }
-          </style>
-        </head>
-        <body>
-          <table>
-            <tr>
-              <th>Ngày thực hiện</th>
-              <th>Tên công việc</th>
-              <th>Nội dung chi tiết</th>
-              <th>Ghi chú</th>
-            </tr>
-      `;
+  // ID của file Google Sheet của bạn
+  const spreadsheetId = "1KRQFOX-FMj3NVwjwNs1YMVb5rDQbkKdAbDa1K20Ggxs";
+  
+  // Link tự động xuất Sheet tab mang tên nhân viên thành file Excel (.xlsx)
+  const exportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=xlsx&sheet=${encodeURIComponent(userName)}`;
 
-      filteredLogsData.forEach(log => {
-        html += `
-          <tr>
-            <td>${log.date}</td>
-            <td>${log.task}</td>
-            <td>${(log.details || '').replace(/\n/g, '<br>')}</td>
-            <td>${log.note || ''}</td>
-          </tr>
-        `;
-      });
-
-      html += `</table></body></html>`;
-
-      const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `Nhat_ky_cong_viec_${currentUserNameLogs}_${new Date().toISOString().split('T')[0]}.xls`;
-      link.click();
-    }
+  // Mở link để trình duyệt tự động tải file .xlsx chuẩn định dạng về máy
+  window.open(exportUrl, '_blank');
+}
 
     function showPage(page) {
       if (page === 'form') {
