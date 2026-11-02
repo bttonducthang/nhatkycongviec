@@ -31,7 +31,7 @@
 
   <!-- URL API kết nối với Google Apps Script -->
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbytHAib7fq4LfozOBIhfBSK3TD0QCVwRFnT4vF7V_mn8UVWLtRfMhUU8aS1KzvNrQXB/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbyAEeLBrK42wAAYel_pkmKFsB_gcRsnmoROOrY69iba0dLlzZFYvjP9Re3pOJweGqqT/exec";
     let currentUserList = [];
 
     async function postToGAS(data) {
@@ -1029,28 +1029,33 @@ function applySearchAndFilter() {
       }
     }
 
-// Hàm tải file Excel chuẩn định dạng theo đúng nhân viên đang chọn
-function exportToExcel() {
-  // Lấy tên nhân viên đang được chọn từ dropdown (hoặc đang xem trên danh sách)
-  const userName = document.getElementById('userSelect').value || currentUserNameLogs;
+// Hàm tải file Excel chuẩn định dạng theo đúng Sheet của nhân viên đã chọn
+async function exportToExcel() {
+  // Ưu tiên lấy tên nhân viên đang xem ở danh sách, nếu không lấy từ ô select
+  const userName = currentUserNameLogs || document.getElementById('userSelect').value;
 
   if (!userName) {
     alert("Vui lòng chọn nhân viên cần tải file!");
     return;
   }
 
-  // ID của file Google Sheet của bạn
-  const spreadsheetId = "1KRQFOX-FMj3NVwjwNs1YMVb5rDQbkKdAbDa1K20Ggxs";
-  
-  // Tìm Sheet tương ứng với tên nhân viên trong Google Sheet để lấy ID (gid) của tab đó
-  // (Hoặc trình duyệt tự nhận diện qua tên Sheet nếu dùng cú pháp export trực tiếp)
-  
-  // Link tự động xuất đúng tab Sheet của nhân viên đó thành file Excel (.xlsx) chuẩn định dạng
-  // Lưu ý: Tên tab trên Google Sheet phải khớp hoàn toàn với tên nhân viên
-  const exportUrl = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/export?format=xlsx&sheet=${encodeURIComponent(userName)}`;
+  try {
+    // Gọi yêu cầu đến Google Apps Script để lấy đúng link gid của nhân viên đó
+    const result = await postToGAS({
+      action: 'getExportUrl',
+      fullName: userName
+    });
 
-  // Mở tab mới để trình duyệt tải file Excel về máy
-  window.open(exportUrl, '_blank');
+    if (result.status === 'success' && result.exportUrl) {
+      // Mở tab mới tải file chuẩn xác của riêng nhân viên đó
+      window.open(result.exportUrl, '_blank');
+    } else {
+      alert("Lỗi: " + (result.message || "Không thể tạo liên kết tải file!"));
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Đã xảy ra lỗi kết nối khi tải file!");
+  }
 }
 
     function showPage(page) {
